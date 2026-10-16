@@ -163,3 +163,38 @@
 
 main,.nav-wrap{max-width:1330px}.footer{max-width:1262px}
 .unmeasured-bar{flex:1;height:5px;border:1px dashed var(--muted);border-radius:8px;opacity:.55}
+
+/* Readable public scorecard and replay type sizes. */
+main,.nav-wrap{max-width:1480px}.footer{max-width:1412px}
+nav a{font-size:14px}.brand{font-size:22px}
+.sketch-board .leaderboard{min-width:1320px;font-size:14px}
+.sketch-board .leaderboard thead th{font-size:13px}
+.sketch-board .leaderboard thead small{font-size:11px}
+.sketch-board .leaderboard .system strong{font-size:14px}
+.sketch-board .leaderboard .model{font-size:12px}
+.sketch-board .leaderboard .system small{font-size:11px}
+.score-cell strong{font-size:21px}.rank{font-size:15px}
+.system-icon{width:34px;height:36px;font-size:15px}
+.evidence-link{font-size:14px}.segmented button,.search input{font-size:13px}
+.scenario-tabs button{font-size:15px}.board-heading .tag{font-size:12px}
+.table-bottom,.score-note,.footer{font-size:12px}
+.metric-explainer .facts>div{font-size:15px;line-height:1.75;padding-block:18px}
+.metric-explainer .formula.large{font-size:14px!important;line-height:1.8}
+.metric-explainer h2{font-size:23px}.intro{font-size:17px}
+.replay-heading p,.step-meta,.replay-position-label{font-size:14px}
+.replay-inspector .inspector-tabs button{font-size:14px}
+.replay-transport button,.replay-transport select{font-size:14px}
+.command-block{font-size:14px}.step-description,.facts>div,.bar-row{font-size:14px}
+.bar-row strong{font-size:15px}.bar-row>div{width:155px}
+@media(max-width:550px){
+ nav a{font-size:13px}.brand{font-size:20px}
+ .segmented button{font-size:12px;padding-inline:8px}
+ .metric-explainer .facts>div{font-size:14px;line-height:1.65;gap:16px}
+ .metric-explainer .facts dt{min-width:100px}
+ .metric-explainer .formula.large{font-size:13px!important}
+ .replay-inspector .inspector-tabs button{font-size:12px}
+ .command-block{font-size:13px}.replay-heading p{font-size:13px}
+ .replay-position-label{font-size:12px}.replay-transport button,.replay-transport select{font-size:12px}
+ .intro{font-size:15px}.score-note,.table-bottom,.footer{font-size:11px}
+ .bar-row>div{width:130px}
+}
