@@ -1,5 +1,5 @@
-import {leaderboard,evidence,benchmark,methods,metricPage,notFound,selectedAttempt} from './view.mjs?v=2026-10-16-beta.7';
-import {replaySteps} from './replay.mjs?v=2026-10-16-beta.7';
+import {leaderboard,evidence,benchmark,methods,metricPage,notFound,selectedAttempt} from './view.mjs?v=2026-10-16-beta.8';
+import {replaySteps} from './replay.mjs?v=2026-10-16-beta.8';
 const main=document.querySelector('main');
 const filters={type:'all',history:false,query:'',hosts:5};
 let data,detailTab='step',timer=null;

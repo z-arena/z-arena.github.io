@@ -4,7 +4,7 @@ cochise-none-b0c1596ac877,b0c1596ac87768a0ebdea4f2d82a46ac1fa90b09158a3aaee88cc4
 cochise-none-a227870ee823,a227870ee823a50db2b370c885f0a6318cf4bb66adaa722d4de16c921f9c419b,Cochise,Pilot rc3,DeepSeek-V4.1-Flash,none,True,,1,,,,59.18,59.18,59.18,5,2,False
 pentest-gpt2-none-83864a8b7af8,83864a8b7af8bd36df17e09e31d89d4c87f38a9ac87d620a2733c6a699393af4,PentestGPT2,Pilot rc3,DeepSeek-V4.1-Flash,none,False,,1,54.17,54.17,54.17,62.86,62.86,62.86,5,3,False
 pentest-gpt2-none-aa16e69ecdb5,aa16e69ecdb59bae00aef8e3b62b606736b3564d0e72d6a81c8ac39f1396a0a5,PentestGPT2,Pilot rc4,DeepSeek-V4.1-Flash,none,False,,1,58.36,58.36,58.36,66.41,66.41,66.41,5,3,False
-react-reference-none-f8e3ef549535,f8e3ef549535de2c595939d26f39d498064fdb273c83858083f134b34dfb3dd7,Native (ReAct),Pilot rc4,DeepSeek-V4.1-Flash,none,True,3,1,56.27,56.27,56.27,62.0,62.0,62.0,5,3,False
+react-reference-none-f8e3ef549535,f8e3ef549535de2c595939d26f39d498064fdb273c83858083f134b34dfb3dd7,ReAct,Pilot rc4,DeepSeek-V4.1-Flash,none,True,3,1,56.27,56.27,56.27,62.0,62.0,62.0,5,3,False
 pentest-gpt2-none-b504c953f364,b504c953f364842a054cc949d39ff0cbb555ca2dc5b6d73286e47f13952d05f4,PentestGPT2,Recovery rc1,DeepSeek-V4.1-Flash,none,True,4,1,54.54,54.54,54.54,66.49,66.49,66.49,5,3,False
 z-agent-none-d8af56a2ec4a,d8af56a2ec4a168202e65f452681f5c7df73a628886902cfc4d4999385d68b06,Z-agent,Recovery rc1,DeepSeek-V4.1-Flash,none,True,2,1,59.94,59.94,59.94,68.89,68.89,68.89,5,3,False
 z-agent-vtm-79f8787d0472,79f8787d0472dc64c92d0e1720120f7063aac16a3fa975b9e685bc98ebbf31e6,Z-agent-vtm-beta,Recovery rc1,DeepSeek-V4.1-Flash,vtm,True,1,1,62.33,62.33,62.33,72.21,72.21,72.21,5,3,False
