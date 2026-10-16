@@ -151,3 +151,15 @@
   .network-host{width:19%}.network-host.slot-0{left:7%}.network-host.slot-1{left:40%}.network-host.slot-2{left:75%}.network-host.row-0{top:178px}.network-host.row-1{top:278px}.network-host.row-2{top:378px}.network-host.row-3{top:478px}.network-host.row-4{top:578px}
   .network-canvas[data-linked="false"] .network-host{width:24%}.network-canvas[data-domains="1"] .network-domain{left:50%}.network-canvas[data-domains="1"] .network-host{left:38%}.network-canvas[data-domains="2"] .network-domain.slot-0{left:25%}.network-canvas[data-domains="2"] .network-domain.slot-1{left:75%}.network-canvas[data-domains="2"] .network-host.slot-0{left:13%}.network-canvas[data-domains="2"] .network-host.slot-1{left:63%}.network-canvas[data-linked="false"][data-domains="3"] .network-domain.slot-0{left:16.6667%}.network-canvas[data-linked="false"][data-domains="3"] .network-domain.slot-1{left:50%}.network-canvas[data-linked="false"][data-domains="3"] .network-domain.slot-2{left:83.3333%}.network-canvas[data-linked="false"][data-domains="3"] .network-host.slot-0{left:4.6667%}.network-canvas[data-linked="false"][data-domains="3"] .network-host.slot-1{left:38%}.network-canvas[data-linked="false"][data-domains="3"] .network-host.slot-2{left:71.3333%}
 }
+
+/* Five-axis scorecard: each component and its original weight remain visible. */
+.sketch-board .leaderboard{min-width:1210px}
+.score-note{font-size:11px;line-height:1.8;color:var(--muted);margin:16px 2px}
+.score-note a{color:var(--blue);margin-left:8px;text-decoration:underline;text-underline-offset:3px}
+.score-note strong{color:var(--text)}
+.leaderboard sup{font-size:10px;margin-left:2px}
+.metric-explainer{margin-bottom:22px}.metric-explainer .facts dd{max-width:72%;text-align:left;flex:2}
+.metric-explainer:last-child{margin-top:22px}
+
+main,.nav-wrap{max-width:1330px}.footer{max-width:1262px}
+.unmeasured-bar{flex:1;height:5px;border:1px dashed var(--muted);border-radius:8px;opacity:.55}

@@ -1,5 +1,5 @@
-import {leaderboard,evidence,benchmark,methods,metricPage,notFound,selectedAttempt} from './view.mjs?v=2026-10-16-beta.6c';
-import {replaySteps} from './replay.mjs?v=2026-10-16-beta.6c';
+import {leaderboard,evidence,benchmark,methods,metricPage,notFound,selectedAttempt} from './view.mjs?v=2026-10-16-beta.7';
+import {replaySteps} from './replay.mjs?v=2026-10-16-beta.7';
 const main=document.querySelector('main');
 const filters={type:'all',history:false,query:'',hosts:5};
 let data,detailTab='step',timer=null;
@@ -95,7 +95,7 @@ window.addEventListener('hashchange',()=>{stop();Object.assign(playback,{positio
 window.addEventListener('pagehide',stop);
 try{
   const response=await fetch('./results.json',{cache:'no-store'});if(!response.ok)throw new Error('Dataset unavailable');
-  data=await response.json();if(data.schema!=='zarena.public-test/v1'||!Array.isArray(data.configs)||!Array.isArray(data.attempts))throw new Error('Unsupported dataset');
+  data=await response.json();if(data.schema!=='zarena.public-test/v2'||!Array.isArray(data.configs)||!Array.isArray(data.attempts))throw new Error('Unsupported dataset');
   const initialStep=new URLSearchParams(location.search).get('step');
   if(initialStep!==null&&/^\d+$/.test(initialStep))playback.position=Math.min(stepCount(),Number(initialStep));
   render();
