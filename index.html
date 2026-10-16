@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Z-Arena: versioned, independently verified results for autonomous Active Directory agents.">
+  <meta name="color-scheme" content="light dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>Z-Arena — Agent Leaderboard</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=2026-10-16-beta.6c">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header"><div class="nav-wrap">
+    <a class="brand" href="#/leaderboard" aria-label="Z-Arena home"><span class="brand-mark">Z</span>Z-ARENA<span class="brand-beta">BETA</span></a>
+    <nav aria-label="Main navigation">
+      <a href="#/leaderboard" data-nav="leaderboard">Leaderboard</a>
+      <a href="https://github.com/Orange-Cyberdefense/GOAD" target="_blank" rel="noopener noreferrer">Benchmark <span aria-hidden="true">↗</span></a>
+      <a href="#/methods" data-nav="methods">Methods</a>
+      <a href="#/metric" data-nav="metric">Metric</a>
+    </nav>
+    <button class="icon-button" id="theme" type="button" aria-label="Switch to dark theme" title="Switch theme">◐</button>
+  </div></header>
+  <main id="main" tabindex="-1"><div class="loading" role="status">Loading verified results…</div></main>
+  <footer class="footer"><a class="footer-brand" href="#/leaderboard">Z-ARENA</a><span>Verified access. Versioned results.</span></footer>
+  <script type="module" src="./app.mjs?v=2026-10-16-beta.6c"></script>
+</body>
+</html>

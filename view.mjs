@@ -1,0 +1,148 @@
+import {replayAt,stepTitles,stepDescriptions,replaySteps,commandText,commandTitle} from './replay.mjs?v=2026-10-16-beta.6c';
+export const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const e = escape;
+export const number = (value, digits = 0) => value == null ? '—' : new Intl.NumberFormat('en-US', {maximumFractionDigits: digits, minimumFractionDigits: digits}).format(value);
+export const score = value => number(value, 2);
+export const duration = value => { if(value == null)return '—'; const seconds=Math.round(value); return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m ${seconds % 60}s`; };
+const date = value => value ? new Date(value).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric', timeZone:'UTC'}) : 'Not measured';
+const short = value => e(value ? value.slice(0, 12) : '—');
+const typeLabel = c => c.type === 'native' ? 'Native model' : 'Agentic method';
+const icon = c => c.memory_mode === 'vtm' ? 'V' : c.agent === 'z-agent' ? 'Z' : c.agent === 'cochise' ? 'C' : c.agent === 'pentest-gpt2' ? 'P' : 'N';
+const stops = {max_runtime:'Time budget reached',agent_no_action:'No-action guard',llm_timeout:'Model request timeout',model_transport:'Model transport error',model_balance_exhausted:'Model service balance exhausted',reset_shutdown_timeout:'Lab reset: shutdown timeout',cancelled:'Cancelled',agent_task_complete:'Agent reported completion',native_candidate_complete:'Candidate complete',model_authentication:'Model authentication error',model_permission:'Model permission error',model_rate_limit:'Model rate limit',model_service_error:'Model service error',model_request_invalid:'Invalid model request',max_tokens:'Token budget reached',max_interactions:'Interaction budget reached',invalid_event_stream:'Invalid event stream'};
+export const stopLabel = value => stops[value] || 'Unclassified stop';
+const metric = (label, value, sub = '') => `<div class="metric"><span>${e(label)}</span><strong>${value}</strong>${sub ? `<small>${e(sub)}</small>` : ''}</div>`;
+const chip = (text, symbol = '◇') => `<span class="chip"><span aria-hidden="true">${symbol}</span>${e(text)}</span>`;
+const breadcrumb = (label) => `<div class="breadcrumb"><a href="#/leaderboard">Leaderboard</a><span>/</span>${e(label)}</div>`;
+
+export function selectedConfigs(data, {type = 'all', history = false, query = ''} = {}) {
+  return data.configs.filter(c => (history || c.current) && (type === 'all' || c.type === type)
+    && `${c.name} ${c.model} ${c.version}`.toLowerCase().includes(query.toLowerCase()))
+    .sort((a,b) => Number(b.current)-Number(a.current) || (b.score ?? -1)-(a.score ?? -1) || a.name.localeCompare(b.name));
+}
+
+export function componentMedian(data, configId, axis) {
+  const rows = data.attempts.filter(a => a.config_id === configId && a.evidence_verified);
+  const values = rows.map(a => axis === 'objectives' ? a.access_objectives : a.axes?.[axis]);
+  if (!values.length || values.some(v => v == null)) return null;
+  values.sort((a,b) => a-b);
+  const middle = Math.floor(values.length/2);
+  return values.length % 2 ? values[middle] : (values[middle-1]+values[middle])/2;
+}
+
+export function leaderboard(data, filters = {}) {
+  const hosts = filters.hosts || 5;
+  const rows = hosts === 5 ? selectedConfigs(data,filters) : [];
+  return `<section class="board-heading"><div><div class="eyebrow">Z-ARENA</div><h1>Autonomous Active Directory Agent Leaderboard</h1></div><span class="tag">DeepSeek-V4.1-Flash</span></section>
+    <div class="scenario-tabs" role="group" aria-label="Benchmark scenario"><button data-hosts="5" aria-pressed="${hosts===5}">5 Hosts</button><button data-hosts="3" aria-pressed="${hosts===3}">3 Hosts</button></div>
+    <section class="board sketch-board" aria-label="Agent results">
+    <div class="toolbar"><div class="segmented" role="group" aria-label="Method type">${[['all','All methods'],['native','Native model'],['agentic','Agentic method']].map(([v,label])=>`<button data-filter="${v}" aria-pressed="${(filters.type||'all')===v}">${label}</button>`).join('')}</div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" aria-label="Search methods" placeholder="Search agents…" value="${e(filters.query||'')}"></label></div>
+    <div class="table-scroll" tabindex="0" aria-label="Results table, scroll horizontally on small screens"><table class="leaderboard"><caption class="sr-only">Verified access scores, latest measured configuration per method; historical versions available below.</caption><thead><tr><th scope="col">Rank</th><th scope="col">Agent</th><th scope="col">Model</th><th scope="col" class="numeric">Overall Score ↓<small>Access capability</small></th><th scope="col" class="numeric">Compromise</th><th scope="col" class="numeric">Coverage</th><th scope="col" class="numeric">Access Objectives</th><th scope="col" class="numeric">Safety</th><th scope="col">Evidence</th></tr></thead><tbody>
+    ${rows.map(c=>`<tr class="${c.rank===1&&c.current?'first':''}"><td class="rank">${c.current?(c.rank??'—'):'—'}</td><th scope="row"><a class="system" href="#/benchmark/${e(c.id)}"><span class="system-icon ${c.type}">${icon(c)}</span><span><strong>${e(c.name)}</strong>${c.current?'':'<small>Earlier result</small>'}</span></a></th><td class="model">${e(c.model)}</td><td class="numeric score-cell"><strong>${score(c.score)}</strong></td><td class="numeric">${score(componentMedian(data,c.id,'compromise'))}</td><td class="numeric">${score(componentMedian(data,c.id,'coverage'))}</td><td class="numeric">${score(componentMedian(data,c.id,'objectives'))}</td><td class="numeric" title="Safety score from observed activity; measurement coverage may be partial">${score(componentMedian(data,c.id,'safety'))}</td><td><a class="evidence-link" href="#/benchmark/${e(c.id)}" aria-label="logs — ${e(c.name)}${c.current?'':' — '+e(c.version)}">logs <span aria-hidden="true">↗</span></a></td></tr>`).join('') || `<tr><td colspan="9"><div class="empty"><strong>${hosts===3?'No published results for 3 Hosts':'No matching results'}</strong>${hosts===3?'':`<button class="button secondary" data-reset>Clear filters</button>`}</div></td></tr>`}
+    </tbody></table></div>
+    <div class="table-bottom"><label class="check"><input id="history" type="checkbox" ${filters.history?'checked':''}> Include earlier versions</label><span>${rows.length} configurations · ${date(data.updated_at)}</span></div></section>
+`;
+}
+
+export function selectedAttempt(data, id, attemptId) {
+  const rows=data.attempts.filter(a=>a.config_id===id);
+  return rows.find(a=>a.id===attemptId)||[...rows].reverse().find(a=>a.evidence_verified)||rows[0];
+}
+const proofLabel=c=>`${e(c.asset_id)} · ${e(({compromised:'administrator access verified',controlled:'domain control verified',authenticated:'authentication verified',privileged:'privileges verified',discovered:'discovered',fingerprinted:'service identified'})[c.rung]||c.rung)}${c.kind==='account'?' · '+e(c.origin):''}`;
+const hostStateLabel={unverified:'Not yet verified',discovered:'Host discovered',admin:'Admin verified'};
+function replayFeedback(snapshot) {
+  const step=snapshot.selected;
+  if(snapshot.source==='agent')return step?`<strong>Execution step ${step.index}</strong><span>Exit code ${step.exit_status??'—'} · ${e(step.status)}${step.target_host_ids.length?' · References '+step.target_host_ids.map(e).join(', '):''}</span>`:'<strong>Start of execution</strong><span>Select a command or press Play.</span>';
+  if(!step)return '<strong>Start of verification</strong><span>No access has been verified yet.</span>';
+  const transitions=snapshot.hosts.filter(h=>h.state!==h.previousState);
+  if(transitions.length)return `<strong>New at step ${step.index}</strong>${transitions.map(h=>`<span><b>${e(h.id)}</b> ${hostStateLabel[h.previousState]} <span aria-hidden="true">→</span> <b>${hostStateLabel[h.state]}</b></span>`).join('')}`;
+  const changes=step.changes.map(proofLabel);
+  return `<strong>Step ${step.index} · ${e(step.target_host_id)}</strong><span>${step.status==='failed'?'Verification failed · No new access verified.':changes.length?changes.join('; '):'Verification completed · No new access verified.'}</span>`;
+}
+function replayMap(replay,snapshot,selectedHost) {
+  const step=snapshot.selected,isAgent=snapshot.source==='agent';
+  const access=isAgent?replayAt(replay,replay.steps.length,'verification'):snapshot;
+  const targets=isAgent?(step?.target_host_ids||[]):step?[step.target_host_id]:[];
+  const host=access.hosts.find(h=>h.id===selectedHost);
+  const admin=access.hosts.filter(h=>h.state==='admin').length,controlled=access.domains.filter(d=>d.controlled).length;
+  const parent=(replay.domain_links||[]).find(l=>l.kind==='parent-child'),trust=(replay.domain_links||[]).find(l=>l.kind==='forest-trust');
+  const external=parent&&trust?(trust.source===parent.source?trust.target:trust.target===parent.source?trust.source:null):null;
+  const groups=external?[
+    {id:parent.source,label:'Root domain',x:16.5},{id:parent.target,label:'Child domain',x:49.5},{id:external,label:'Root domain',x:84.5},
+  ]:access.domains.map((d,i)=>({id:d.id,label:'Domain',x:100*(i+.5)/access.domains.length}));
+  const rows=Math.max(...groups.map(g=>access.hosts.filter(h=>h.domain_id===g.id).length));
+  const scope=isAgent?'Final verified access':'Access verified so far';
+  const status=h=>h.state==='admin'?'Admin access':h.state==='discovered'?'Discovered':'Not verified';
+  const nodes=groups.map((g,slot)=>{
+    const domain=access.domains.find(d=>d.id===g.id);
+    return `<div class="network-domain slot-${slot}"><span>${e(g.label)} ${e(g.id)}</span>${domain.controlled?`<button class="domain-control" data-verification-step="${domain.controlStep}" title="View domain control verification">Controlled <span aria-hidden="true">↗</span></button>`:'<span class="domain-unverified">Control not verified</span>'}</div>${access.hosts.filter(h=>h.domain_id===g.id).map((h,i)=>{
+      const target=targets.includes(h.id),fresh=!isAgent&&h.state!==h.previousState;
+      return `<button class="network-host slot-${slot} row-${i} ${h.state}${target?' target':''}${fresh?' newly-verified':''}" data-host="${e(h.id)}" aria-pressed="${selectedHost===h.id}" aria-label="${e(h.id)}, ${isAgent?'final verified result: ':''}${status(h)}${target?(isAgent?', referenced in current command':', current check'):''}">
+        <span class="node-identity"><strong>${e(h.id)}</strong><span>${h.role==='dc'?'DC':'SERVER'}</span></span><span class="node-access"><i aria-hidden="true"></i>${status(h)}</span>${target?'<span class="node-target">CURRENT</span>':''}${fresh?'<span class="node-new">NEW</span>':''}
+      </button>`;
+    }).join('')}`;
+  }).join('');
+  const height=Math.max(360,rows*100+160);
+  const wires=groups.map(g=>{
+    const hosts=access.hosts.filter(h=>h.domain_id===g.id),x=g.x*10;
+    return `<path class="membership-edge" d="M${x} 140V178${hosts.slice(1).map((h,i)=>`M${x} ${242+i*100}V${278+i*100}`).join('')}"/>`;
+  }).join('');
+  const forestMarkup=external?`<rect class="forest-zone" x="16" y="14" width="640" height="${height-28}" rx="4"/><rect class="forest-zone" x="704" y="14" width="280" height="${height-28}" rx="4"/>
+    <path class="trust-edge" d="M165 83V64H845V83" marker-start="url(#trust-arrow)" marker-end="url(#trust-arrow)"/>
+    <path class="parent-edge" d="M250 114H410" marker-start="url(#trust-arrow)" marker-end="url(#trust-arrow)"/>`:'';
+  const networkLabels=external?'<span class="forest-label forest-a">FOREST A</span><span class="forest-label forest-b">FOREST B</span><span class="edge-label trust-label">Forest trust · Two-way</span><span class="edge-label parent-label">Parent / child</span>':'';
+  const hostDetails=host?`<div class="host-services"><div class="host-detail-title"><strong>${e(host.id)} <span>${host.role==='dc'?'Domain controller':'Member server'} · ${e(host.domain_id)}</span></strong><span class="access-result ${host.state}">${isAgent?'Final result · ':''}${status(host)}</span>${host.adminStep?`<button class="proof-link" data-verification-step="${host.adminStep}">Admin proof · check ${host.adminStep} →</button>`:''}</div><div class="host-detail-ports"><span>Verified services</span>${host.services.length?host.services.map(s=>`<span class="service-port">${s.port}/${e(s.protocol)}</span>`).join(''):'<span>None recorded in this view</span>'}</div></div>`:'';
+  return `<section class="panel replay-map" data-access-scope="${isAgent?'final':'current'}">
+    <div class="panel-title"><h2>Lab topology <small>${external?'2 forests · ':''}${access.domains.length} domains · ${access.hosts.length} hosts</small></h2><span class="tag map-step">${isAgent?'Execution':'Verification'} ${snapshot.position} / ${snapshot.total}</span></div>
+    <div class="map-summary"><div class="map-outcome"><span class="map-scope">${scope}</span><span><b>${admin}/${access.hosts.length}</b> admin access <i>·</i> <b>${controlled}/${access.domains.length}</b> domain control</span></div><span class="map-current">${isAgent?'Command reference':'Current check'} <b>${targets.length?targets.map(e).join(', '):'—'}</b></span></div>
+    <div class="network-scroll" tabindex="0" aria-label="Network diagram, scroll horizontally on small screens"><div class="live-map network-canvas" role="group" aria-label="${external?'Two forests, a parent and child domain, and a two-way forest trust':'Configured domains'}" data-linked="${Boolean(external)}" data-domains="${groups.length}" data-rows="${rows}">
+      <svg class="network-wires" viewBox="0 0 1000 ${height}" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="trust-arrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1L7 4L1 7" fill="none" stroke="currentColor" stroke-width="1.2"/></marker></defs>${forestMarkup}${wires}</svg>${networkLabels}${nodes}
+    </div></div>
+    <div class="map-legend"><span><i class="legend-admin" aria-hidden="true"></i>Admin access verified</span><span><i class="legend-unknown" aria-hidden="true"></i>Not verified</span><span><i class="legend-target" aria-hidden="true"></i>${isAgent?'Command reference':'Current check'}</span><span class="map-timing">${isAgent?'Access: final verification':'Access: current verification step'}</span></div>
+    <div class="map-feedback">${replayFeedback(snapshot)}</div>${hostDetails}
+  </section>`;
+}
+function replayPanel(a,snapshot,tab) {
+  const step=snapshot.selected,isAgent=snapshot.source==='agent';
+  const scorePanel=`<h2>Final score details</h2><div class="bars">${[['Coverage',a.axes.coverage],['Compromise',a.axes.compromise],['Access objectives',a.access_objectives],['Safety',a.axes.safety]].map(([label,value])=>`<div class="bar-row"><div><span>${label}</span></div><progress max="100" value="${value??0}" aria-label="${label}"></progress><strong>${score(value)}</strong></div>`).join('')}</div>`;
+  const u=a.usage,o=a.observation;
+  const usage=`<h2>Model usage</h2><dl class="facts"><div><dt>Known tokens</dt><dd>${number(u.known_tokens)}</dd></div><div><dt>Total tokens</dt><dd>${u.total_tokens==null?'Not fully measured':number(u.total_tokens)}</dd></div><div><dt>Cost</dt><dd>${u.cost_usd==null?'Not measured':'$'+number(u.cost_usd,2)}</dd></div><div><dt>Requests / usage unknown</dt><dd>${number(u.requests)} / ${number(u.unknown_requests)}</dd></div><div><dt>Complete network observation</dt><dd>${number(o.actions_measured)} / ${number(o.actions_observed)} actions</dd></div><div><dt>Observed out-of-scope activity / lockouts</dt><dd>${number(o.out_of_scope)} / ${number(o.lockouts)}</dd></div></dl>`;
+  const panels={
+    step:isAgent?(step?`<div class="step-heading"><div><div class="eyebrow">EXECUTION ${snapshot.position} / ${snapshot.total}</div><h2>${e(commandTitle(step.command_parts))}</h2></div><span class="tag ${step.status==='succeeded'?'success':'failure'}">${e(step.status)}</span></div><pre class="command-block"><code>${e(commandText(step.command_parts))}</code></pre><div class="step-meta"><span class="tag" title="Credentials, addresses, paths and private values are hidden. Python code keeps its structure with anonymous variable names. Unsupported content remains hidden.">Redacted</span><span>Exit ${step.exit_status??'—'}</span><span>${number(step.elapsed_seconds,3)}s</span></div>${step.verification_steps.length?`<div class="linked-checks"><span>Linked later verification</span>${step.verification_steps.map(index=>`<button class="proof-link" data-verification-step="${index}">Check ${index} →</button>`).join('')}</div>`:''}`:'<h2>Start of execution</h2><p class="step-description">Select a command or press Play.</p>'):step?`<div class="step-heading"><div><div class="eyebrow">STEP ${snapshot.position} / ${a.replay.steps.length}</div><h2>${e(stepTitles[step.kind])}</h2></div><span class="tag ${step.status==='succeeded'?'success':'failure'}">${e(step.status)}</span></div><p class="step-description">${e(stepDescriptions[step.kind])}</p><div class="step-meta"><strong>${e(step.target_host_id)}</strong><span>${e(step.domain_id)}</span><span>${number(step.elapsed_seconds,3)}s</span></div><div class="step-changes">${step.changes.length?step.changes.map(c=>`<span>${proofLabel(c)}</span>`).join(''):'<span>No verified access change recorded for this step.</span>'}</div>`:'<h2>Initial inventory</h2><p class="step-description">Select a step or press Play.</p>',
+    accounts:isAgent?'<h2>Verified accounts</h2><p class="step-description">Account access is established by independent verification.</p><button class="proof-link" data-replay-source="verification">Open verification →</button>':`<div class="accounts-scroll"><table class="account-table"><thead><tr><th>Account</th><th>Domain</th><th>Role</th><th>Verified state</th><th>Origin</th></tr></thead><tbody>${snapshot.accounts.map(a=>`<tr><td>${e(a.id)}</td><td>${e(a.domain_id)}</td><td>${e(a.tier.replaceAll('_',' '))}</td><td>${e(a.state)}</td><td>${a.origins.length?a.origins.map(e).join(', '):'—'}</td></tr>`).join('')}</tbody></table></div>`,
+    score:scorePanel, usage,
+  };
+  const active=Object.hasOwn(panels,tab)?tab:'step';
+  return `<section class="panel replay-inspector"><div class="inspector-tabs" role="tablist" aria-label="Benchmark details">${[['step',isAgent?'Execution step':'Step evidence'],['accounts','Accounts & origins'],['score','Score details'],['usage','Usage']].map(([key,label])=>`<button role="tab" id="detail-tab-${key}" data-detail-tab="${key}" aria-selected="${active===key}" aria-controls="detail-panel" tabindex="${active===key?0:-1}">${label}</button>`).join('')}</div><div id="detail-panel" class="replay-panel-body" role="tabpanel" tabindex="0" aria-labelledby="detail-tab-${active}">${panels[active]}</div></section>`;
+}
+function replayControls(a,snapshot,state) {
+  const total=snapshot.total,pos=snapshot.position,steps=replaySteps(a.replay,snapshot.source),size=Math.max(1,Math.ceil(total/80));
+  const segments=Array.from({length:Math.ceil(total/size)},(_,i)=>{const start=i*size+1,end=Math.min(total,(i+1)*size),failed=steps.slice(start-1,end).some(s=>s.status!=='succeeded');return {start,end,failed,selected:pos>=start&&pos<=end};});
+  return `<section class="panel replay-controls" aria-label="Replay controls"><div class="replay-transport"><button data-seek="0" aria-label="First step" ${!pos?'disabled':''}>|‹</button><button data-seek="${Math.max(0,pos-1)}" aria-label="Previous step" ${!pos?'disabled':''}>‹</button><button data-play class="play-button" aria-label="${state.playing?'Pause replay':'Play replay'}">${state.playing?'Ⅱ Pause':'▶ Play'}</button><button data-seek="${Math.min(total,pos+1)}" aria-label="Next step" ${pos>=total?'disabled':''}>›</button><span class="replay-position-label">Step <strong>${pos}</strong> / ${total}</span><input id="replay-position" aria-label="Replay position" type="range" min="0" max="${total}" value="${pos}"><select id="replay-speed" aria-label="Playback speed">${[.5,1,2,4].map(v=>`<option value="${v}" ${state.speed===v?'selected':''}>${v}×</option>`).join('')}</select><button data-seek="${total}" aria-label="Last step">›|</button></div><div class="step-strip" role="group" aria-label="${snapshot.source==='agent'?'Execution overview':'Verification steps'}">${segments.map(s=>`<button data-seek="${s.start}" class="${s.failed?'failed':'succeeded'} ${s.selected?'selected':''}" aria-label="${size===1?`Step ${s.start}: ${e(stepTitles[steps[s.start-1].kind]||'Recorded command')}, ${steps[s.start-1].status}`:`Steps ${s.start}–${s.end}${s.failed?', includes failed commands':''}`}" aria-pressed="${s.selected}" tabindex="${s.selected?0:-1}" title="${s.start}–${s.end}${s.failed?' · contains failure':''}"></button>`).join('')}</div></section>`;
+}
+export function evidence(data,id,attemptId,activeTab='step',state={position:1,playing:false,speed:1,host:null,source:'agent'}) {
+  const c=data.configs.find(x=>x.id===id),a=selectedAttempt(data,id,attemptId);
+  if(!c||!a)return notFound();
+  const attempts=data.attempts.filter(x=>x.config_id===id&&x.evidence_verified);
+  const head=`<section class="replay-heading"><div><a class="back-link" href="#/leaderboard">← Leaderboard</a><h1>Benchmark evaluation</h1><p>${e(c.name)} · ${e(c.model)}</p></div>${a.evidence_verified?`<div class="replay-totals"><div><span>Final score</span><strong>${score(a.score)}</strong></div><div><span>Final host admin</span><strong>${a.hosts_admin}/5</strong></div><div><span>Final domains</span><strong>${a.domains_controlled}/3</strong></div></div>`:''}</section>`;
+  const attemptSelector=attempts.length>1?`<label class="attempt-select">Run <select id="replay-attempt" data-config="${e(c.id)}">${attempts.map((x,i)=>`<option value="${e(x.id)}" ${x.id===a.id?'selected':''}>Run ${i+1}</option>`).join('')}</select></label>`:'';
+  if(!a.evidence_verified)return `${head}<div class="empty"><h2>Preparation ended before agent execution</h2><p>${e(stopLabel(a.stop_reason))}. This attempt has no score.</p><a class="back-link" href="#/benchmark/${e(c.id)}">View evaluated run →</a></div>`;
+  if(!a.replay)return `${head}<div class="empty"><h2>Replay unavailable</h2></div>`;
+  const snapshot=replayAt(a.replay,state.position,state.source||'agent');
+  return `${head}<div class="replay-source"><div class="replay-modes" role="group" aria-label="Replay source">${a.replay.agent_steps?.length?`<button data-replay-source="agent" aria-pressed="${snapshot.source==='agent'}">Agent execution</button>`:''}<button data-replay-source="verification" aria-pressed="${snapshot.source==='verification'}">Independent verification</button></div>${attemptSelector}</div>${replayMap(a.replay,snapshot,state.host)}${replayPanel(a,snapshot,activeTab)}${replayControls(a,snapshot,state)}`;
+}
+
+export function benchmark(data) {
+  return `${breadcrumb('Benchmark')}<section class="page-heading"><div class="eyebrow">THE BENCHMARK</div><h1>A reproducible lab.<br><span>Independently verified outcomes.</span></h1><p class="intro">Five Windows hosts across three identity domains.<br>Every measured attempt starts from the same initial snapshot.</p></section>
+    <div class="metrics">${metric('Windows targets','5','Three domain controllers, two member servers')}${metric('Identity domains','3','Parent, child and external domain')}${metric('Agent time budget','2<span> hours</span>','Reset and evaluation are additional')}${metric('Credential priors','0','No supplied target credentials')}</div>
+    <section class="panel"><div class="panel-title"><h2>Environment overview</h2><span class="tag blue">GOAD · five-host profile</span></div><div class="lab-topology"><div class="domain"><span class="eyebrow">PARENT DOMAIN</span><span class="host-node">▣ Domain controller</span></div><span class="connection" aria-hidden="true">↔</span><div class="domain"><span class="eyebrow">CHILD DOMAIN</span><span class="host-node">▣ Domain controller</span><span class="host-node">▤ Member server</span></div><span class="connection" aria-hidden="true">↔</span><div class="domain"><span class="eyebrow">EXTERNAL DOMAIN</span><span class="host-node">▣ Domain controller</span><span class="host-node">▤ Member server</span></div></div><p class="panel-description">Schematic layout only. No internal addresses, account names or live lab connections are exposed.</p></section>
+    <div class="bottom-grid"><section class="panel"><div class="step-number">01</div><h2>Reset & run</h2><p>Restore all six guests, including the executor, to the fixed initial snapshot. Verify health, then start the selected agent with its recorded model, memory and budgets.</p></section><section class="panel"><div class="step-number">02</div><h2>Verify & score</h2><p>Agent claims are checked independently. The evaluator records access outcomes, signs the evidence and derives the access score. Cleanup and measurement coverage are assessed separately.</p></section></div><div class="context-note"><span class="info-icon">i</span><p>The initial snapshot is a verified checkpoint of the existing deployment. It is not a certification of a fresh installation. Each result links its exact baseline and implementation fingerprints.</p></div>`;
+}
+
+export function methods() { return `<section class="placeholder-page"><h1>Methods</h1></section>`; }
+export function metricPage() { return `<section class="placeholder-page"><h1>Metric</h1></section>`; }
+
+export function downloads(data) {
+  return `${breadcrumb('Data')}<section class="page-heading"><div class="eyebrow">RESULTS / ${e(data.release_id)}</div><h1>Results you can inspect.</h1><p class="intro">Versioned summaries for every included configuration and attempt.<br>A local release candidate, ready for review.</p></section><div class="metrics">${metric('Current configurations',number(data.configs.filter(c=>c.current).length))}${metric('All versions',number(data.configs.length))}${metric('Recorded attempts',number(data.attempts.length))}${metric('Measured runs',number(data.attempts.filter(a=>a.evidence_verified).length))}</div><div class="download-grid">${[['results.json','Full public dataset','JSON','Configuration fingerprints, attempts, usage, measurement coverage and source batch links.'],['configurations.csv','Configuration table','CSV','Versioned scores, ranks and sample counts.'],['attempts.csv','Attempt table','CSV','Every included attempt, with status, stop reason and verified outcomes.'],['SHA256SUMS','Release checksums','SHA-256','File digests for this exact static candidate.']].map(([file,title,tag,desc])=>`<a class="panel download-card" href="./${file}" download><span class="tag blue">${tag}</span><h2>${title}</h2><p>${desc}</p><strong>Download <span aria-hidden="true">↓</span></strong></a>`).join('')}</div><div class="context-note"><span class="info-icon">i</span><p>These downloads contain public summaries only. Original runs, raw logs, credentials and internal evidence are not served by this site. Formal repeated-sample eligibility is not granted by this release.</p></div>`;
+}
+
+export function notFound() { return `<section class="empty page-heading"><h1>Result not found.</h1><p>This configuration is not part of the current release.</p><a class="button" href="#/leaderboard">Back to leaderboard</a></section>`; }
